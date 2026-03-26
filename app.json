@@ -1,0 +1,34 @@
+{
+  "expo": {
+    "name": "AGAPAI Leads",
+    "slug": "agapaileads",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "scheme": "agapaileads",
+    "userInterfaceStyle": "automatic",
+    "newArchEnabled": true,
+    "splash": {
+      "backgroundColor": "#0A84FF"
+    },
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "co.com.agapai.leads"
+    },
+    "android": {
+      "adaptiveIcon": {
+        "backgroundColor": "#0A84FF"
+      },
+      "package": "co.com.agapai.leads"
+    },
+    "web": {
+      "bundler": "metro",
+      "output": "server",
+      "favicon": "./assets/favicon.png"
+    },
+    "plugins": ["expo-router"],
+    "experiments": {
+      "typedRoutes": true
+    }
+  }
+}
