@@ -1,46 +1,79 @@
 import { View, Text, StyleSheet, FlatList, TouchableOpacity, TextInput } from 'react-native';
-import { useRouter } from 'expo-router';
+import { useLeadStore, Lead, PIPELINE_STAGES } from '@/store/leads';
 import { Ionicons } from '@expo/vector-icons';
-import { useLeadStore } from '@/lib/store';
+import { router } from 'expo-router';
 
-const STAGES = ['Contacto Inicial', 'Calificado', 'Propuesta', 'Negociación', 'Cerrado'];
+function LeadCard({ lead }: { lead: Lead }) {
+  return (
+    <TouchableOpacity
+      style={styles.card}
+      onPress={() => router.push(`/lead/${lead.id}`)}
+    >
+      <View style={styles.cardHeader}>
+        <Text style={styles.cardName}>{lead.name}</Text>
+        <Text style={styles.cardValue}>${lead.value.toLocaleString()}</Text>
+      </View>
+      <Text style={styles.cardPhone}>{lead.phone}</Text>
+      {lead.email && <Text style={styles.cardEmail}>{lead.email}</Text>}
+    </TouchableOpacity>
+  );
+}
 
 export default function LeadsScreen() {
-  const router = useRouter();
-  const leads = useLeadStore((s) => s.leads);
+  const { leads, currentStage, setCurrentStage } = useLeadStore();
+  const stageLeads = leads.filter((l) => l.stage === currentStage);
+  const stageInfo = PIPELINE_STAGES.find((s) => s.id === currentStage);
 
   return (
     <View style={styles.container}>
       {/* Search bar */}
       <View style={styles.searchBar}>
-        <Ionicons name="search" size={18} color="#8E8E93" />
+        <Ionicons name="search" size={20} color="#888" />
         <TextInput
           style={styles.searchInput}
           placeholder="Búsqueda y filtro"
-          placeholderTextColor="#8E8E93"
+          placeholderTextColor="#888"
         />
       </View>
 
-      {/* Pipeline header */}
-      <Text style={styles.stageTitle}>CONTACTO INICIAL</Text>
-      <Text style={styles.stageInfo}>{leads.length} leads: $0</Text>
-
-      {/* Progress bar */}
-      <View style={styles.progressBar}>
-        {STAGES.map((_, i) => (
-          <View
-            key={i}
+      {/* Stage selector */}
+      <FlatList
+        horizontal
+        data={PIPELINE_STAGES}
+        keyExtractor={(item) => item.id}
+        showsHorizontalScrollIndicator={false}
+        style={styles.stageList}
+        renderItem={({ item }) => (
+          <TouchableOpacity
             style={[
-              styles.progressSegment,
-              { backgroundColor: i === 0 ? '#0A84FF' : '#E5E5EA' },
+              styles.stageTab,
+              currentStage === item.id && { borderBottomColor: item.color, borderBottomWidth: 3 },
             ]}
-          />
-        ))}
+            onPress={() => setCurrentStage(item.id)}
+          >
+            <Text
+              style={[
+                styles.stageTabText,
+                currentStage === item.id && { color: item.color, fontWeight: 'bold' },
+              ]}
+            >
+              {item.label}
+            </Text>
+          </TouchableOpacity>
+        )}
+      />
+
+      {/* Stage header */}
+      <View style={[styles.stageHeader, { borderTopColor: stageInfo?.color || '#0077B6' }]}>
+        <Text style={styles.stageTitle}>{stageInfo?.label.toUpperCase()}</Text>
+        <Text style={styles.stageCount}>
+          {stageLeads.length} leads: ${stageLeads.reduce((sum, l) => sum + l.value, 0).toLocaleString()}
+        </Text>
       </View>
 
-      {/* Leads list or empty state */}
-      {leads.length === 0 ? (
-        <View style={styles.emptyState}>
+      {/* Lead cards */}
+      {stageLeads.length === 0 ? (
+        <View style={styles.empty}>
           <Text style={styles.emptyTitle}>No hay leads aquí todavía</Text>
           <Text style={styles.emptySubtitle}>
             El pipeline te ayuda a gestionar los leads de todas las fuentes en un solo tablero
@@ -48,32 +81,25 @@ export default function LeadsScreen() {
         </View>
       ) : (
         <FlatList
-          data={leads}
+          data={stageLeads}
           keyExtractor={(item) => item.id}
-          renderItem={({ item }) => (
-            <TouchableOpacity
-              style={styles.leadCard}
-              onPress={() => router.push(`/lead/${item.id}`)}
-            >
-              <Text style={styles.leadName}>{item.name}</Text>
-              <Text style={styles.leadPhone}>{item.phone}</Text>
-            </TouchableOpacity>
-          )}
+          renderItem={({ item }) => <LeadCard lead={item} />}
+          contentContainerStyle={styles.cardList}
         />
       )}
 
-      {/* Quick actions */}
-      <View style={styles.quickActions}>
+      {/* Action buttons */}
+      <View style={styles.actions}>
         <TouchableOpacity style={styles.actionBtn}>
-          <Ionicons name="person-add-outline" size={24} color="#0A84FF" />
+          <Ionicons name="person-add-outline" size={24} color="#0077B6" />
           <Text style={styles.actionText}>Agregar contacto</Text>
         </TouchableOpacity>
         <TouchableOpacity style={styles.actionBtn}>
-          <Ionicons name="cash-outline" size={24} color="#0A84FF" />
+          <Ionicons name="cash-outline" size={24} color="#0077B6" />
           <Text style={styles.actionText}>Agregar lead</Text>
         </TouchableOpacity>
         <TouchableOpacity style={styles.actionBtn}>
-          <Ionicons name="checkbox-outline" size={24} color="#0A84FF" />
+          <Ionicons name="checkbox-outline" size={24} color="#0077B6" />
           <Text style={styles.actionText}>Agregar tarea</Text>
         </TouchableOpacity>
       </View>
@@ -82,41 +108,55 @@ export default function LeadsScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#F2F2F7' },
+  container: { flex: 1, backgroundColor: '#f5f5f5' },
   searchBar: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#E5E5EA',
-    margin: 16,
+    backgroundColor: '#fff',
+    margin: 12,
     paddingHorizontal: 12,
-    borderRadius: 10,
-    height: 36,
+    paddingVertical: 8,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: '#ddd',
   },
   searchInput: { flex: 1, marginLeft: 8, fontSize: 16 },
-  stageTitle: { fontSize: 24, fontWeight: 'bold', marginHorizontal: 16 },
-  stageInfo: { fontSize: 14, color: '#8E8E93', marginHorizontal: 16, marginTop: 4 },
-  progressBar: { flexDirection: 'row', marginHorizontal: 16, marginTop: 12, gap: 2 },
-  progressSegment: { flex: 1, height: 4, borderRadius: 2 },
-  emptyState: { flex: 1, justifyContent: 'center', alignItems: 'center', padding: 32 },
-  emptyTitle: { fontSize: 18, fontWeight: '600', textAlign: 'center' },
-  emptySubtitle: { fontSize: 14, color: '#8E8E93', textAlign: 'center', marginTop: 8 },
-  quickActions: {
+  stageList: { maxHeight: 44, paddingHorizontal: 8 },
+  stageTab: { paddingHorizontal: 16, paddingVertical: 10 },
+  stageTabText: { fontSize: 13, color: '#888' },
+  stageHeader: {
+    borderTopWidth: 3,
+    backgroundColor: '#e8e8e8',
+    padding: 12,
+  },
+  stageTitle: { fontSize: 18, fontWeight: 'bold' },
+  stageCount: { fontSize: 13, color: '#666', marginTop: 2 },
+  empty: { flex: 1, justifyContent: 'center', alignItems: 'center', padding: 40 },
+  emptyTitle: { fontSize: 16, fontWeight: 'bold', color: '#333' },
+  emptySubtitle: { fontSize: 14, color: '#888', textAlign: 'center', marginTop: 8 },
+  card: {
+    backgroundColor: '#fff',
+    marginHorizontal: 12,
+    marginVertical: 4,
+    padding: 14,
+    borderRadius: 8,
+    borderLeftWidth: 3,
+    borderLeftColor: '#0077B6',
+  },
+  cardHeader: { flexDirection: 'row', justifyContent: 'space-between' },
+  cardName: { fontSize: 15, fontWeight: '600' },
+  cardValue: { fontSize: 14, fontWeight: 'bold', color: '#0077B6' },
+  cardPhone: { fontSize: 13, color: '#666', marginTop: 4 },
+  cardEmail: { fontSize: 12, color: '#888' },
+  cardList: { paddingBottom: 80 },
+  actions: {
     flexDirection: 'row',
     justifyContent: 'space-around',
-    paddingVertical: 16,
+    backgroundColor: '#fff',
+    paddingVertical: 12,
     borderTopWidth: 1,
-    borderTopColor: '#E5E5EA',
-    backgroundColor: '#FFFFFF',
+    borderTopColor: '#eee',
   },
-  actionBtn: { alignItems: 'center', gap: 4 },
-  actionText: { fontSize: 11, color: '#8E8E93' },
-  leadCard: {
-    backgroundColor: '#FFFFFF',
-    marginHorizontal: 16,
-    marginVertical: 4,
-    padding: 16,
-    borderRadius: 12,
-  },
-  leadName: { fontSize: 16, fontWeight: '600' },
-  leadPhone: { fontSize: 14, color: '#8E8E93', marginTop: 4 },
+  actionBtn: { alignItems: 'center' },
+  actionText: { fontSize: 11, color: '#333', marginTop: 4 },
 });

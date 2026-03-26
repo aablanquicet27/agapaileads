@@ -5,31 +5,28 @@ export default function TabLayout() {
   return (
     <Tabs
       screenOptions={{
-        tabBarActiveTintColor: '#0A84FF',
-        tabBarInactiveTintColor: '#8E8E93',
-        tabBarStyle: {
-          backgroundColor: '#FFFFFF',
-          borderTopColor: '#E5E5EA',
-        },
-        headerStyle: { backgroundColor: '#FFFFFF' },
-        headerTintColor: '#000000',
+        tabBarActiveTintColor: '#0077B6',
+        tabBarInactiveTintColor: '#888',
+        headerStyle: { backgroundColor: '#0077B6' },
+        headerTintColor: '#fff',
+        headerTitleStyle: { fontWeight: 'bold' },
       }}
     >
-      <Tabs.Screen
-        name="chats"
-        options={{
-          title: 'Chats',
-          tabBarIcon: ({ color, size }) => (
-            <Ionicons name="chatbubbles-outline" size={size} color={color} />
-          ),
-        }}
-      />
       <Tabs.Screen
         name="index"
         options={{
           title: 'Leads',
           tabBarIcon: ({ color, size }) => (
             <Ionicons name="cash-outline" size={size} color={color} />
+          ),
+        }}
+      />
+      <Tabs.Screen
+        name="chats"
+        options={{
+          title: 'Chats',
+          tabBarIcon: ({ color, size }) => (
+            <Ionicons name="chatbubbles-outline" size={size} color={color} />
           ),
         }}
       />

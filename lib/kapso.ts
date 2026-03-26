@@ -6,7 +6,10 @@ type KapsoRequestOptions = {
   body?: Record<string, unknown>;
 };
 
-async function kapsoFetch<T>(path: string, options: KapsoRequestOptions = {}): Promise<T> {
+export async function kapsoFetch<T = unknown>(
+  path: string,
+  options: KapsoRequestOptions = {}
+): Promise<T> {
   const { method = 'GET', body } = options;
 
   const res = await fetch(`${KAPSO_BASE_URL}${path}`, {
@@ -15,7 +18,7 @@ async function kapsoFetch<T>(path: string, options: KapsoRequestOptions = {}): P
       'Content-Type': 'application/json',
       Authorization: `Bearer ${KAPSO_API_KEY}`,
     },
-    ...(body ? { body: JSON.stringify(body) } : {}),
+    ...(body && { body: JSON.stringify(body) }),
   });
 
   if (!res.ok) {
@@ -25,14 +28,24 @@ async function kapsoFetch<T>(path: string, options: KapsoRequestOptions = {}): P
   return res.json() as Promise<T>;
 }
 
-export const kapso = {
-  sendMessage: (phoneNumber: string, message: string) =>
-    kapsoFetch('/messages/send', {
-      method: 'POST',
-      body: { phone_number: phoneNumber, message },
-    }),
+// WhatsApp messaging
+export async function sendWhatsAppMessage(phone: string, message: string) {
+  return kapsoFetch('/v1/messages', {
+    method: 'POST',
+    body: {
+      to: phone,
+      type: 'text',
+      text: { body: message },
+    },
+  });
+}
 
-  getConversations: () => kapsoFetch('/conversations'),
+// List conversations
+export async function listConversations() {
+  return kapsoFetch('/v1/conversations');
+}
 
-  getConversation: (id: string) => kapsoFetch(`/conversations/${id}`),
-};
+// List workflows
+export async function listWorkflows() {
+  return kapsoFetch('/v1/workflows');
+}
