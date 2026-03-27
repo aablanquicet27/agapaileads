@@ -65,7 +65,9 @@ async function fetchKapso(path: string, options: RequestInit = {}) {
 
 export const KapsoApi = {
   async listExecutions(): Promise<Execution[]> {
-    const raw = await fetchKapso(`/platform/v1/projects/${KapsoConfig.projectId}/conversations?phone_number_id=${KapsoConfig.phoneNumberId}`);
+    const response = await fetch('/api/conversations');
+    if (!response.ok) throw new Error(`Error HTTP ${response.status}`);
+    const raw = await response.json();
     const items = Array.isArray(raw) ? raw : (raw?.items || raw?.data || []);
     return items.map((c: any) => ({
       id: c.id,
@@ -80,7 +82,12 @@ export const KapsoApi = {
   },
 
   async getExecution(id: string): Promise<Execution | undefined> {
-    const raw = await fetchKapso(`/platform/v1/projects/${KapsoConfig.projectId}/conversations/${id}`);
+    const response = await fetch(`/api/conversations/${id}`);
+    if (!response.ok) {
+      if (response.status === 404) return undefined;
+      throw new Error(`Error HTTP ${response.status}`);
+    }
+    const raw = await response.json();
     if (!raw) return undefined;
     const c = raw.data || raw;
     return {
@@ -96,7 +103,9 @@ export const KapsoApi = {
   },
 
   async listExecutionEvents(executionId: string): Promise<ExecutionEvent[]> {
-    const raw = await fetchKapso(`/platform/v1/projects/${KapsoConfig.projectId}/conversations/${executionId}/messages`);
+    const response = await fetch(`/api/conversations/${executionId}/messages`);
+    if (!response.ok) throw new Error(`Error HTTP ${response.status}`);
+    const raw = await response.json();
     const items = Array.isArray(raw) ? raw : (raw?.items || raw?.data || []);
     return items.map((m: any) => {
       let senderType = 'user';
