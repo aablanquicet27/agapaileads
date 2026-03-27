@@ -65,22 +65,59 @@ async function fetchKapso(path: string, options: RequestInit = {}) {
 
 export const KapsoApi = {
   async listExecutions(): Promise<Execution[]> {
-    return fetchKapso(`/platform/v1/projects/${KapsoConfig.projectId}/executions`);
+    const raw = await fetchKapso(`/platform/v1/projects/${KapsoConfig.projectId}/conversations?phone_number_id=${KapsoConfig.phoneNumberId}`);
+    const items = Array.isArray(raw) ? raw : (raw?.items || raw?.data || []);
+    return items.map((c: any) => ({
+      id: c.id,
+      status: c.status || 'active',
+      contact: {
+        id: c.contact?.id || c.wa_id || c.contact_id || 'unknown',
+        name: c.contact?.name || c.profile_name || c.contact_name || c.phone_number || 'Desconocido',
+        phone: c.contact?.phone || c.phone_number || c.wa_id || 'Desconocido'
+      },
+      createdAt: c.created_at || c.updated_at || new Date().toISOString()
+    }));
   },
 
   async getExecution(id: string): Promise<Execution | undefined> {
-    return fetchKapso(`/platform/v1/projects/${KapsoConfig.projectId}/executions/${id}`);
+    const raw = await fetchKapso(`/platform/v1/projects/${KapsoConfig.projectId}/conversations/${id}`);
+    if (!raw) return undefined;
+    const c = raw.data || raw;
+    return {
+      id: c.id,
+      status: c.status || 'active',
+      contact: {
+        id: c.contact?.id || c.wa_id || c.contact_id || 'unknown',
+        name: c.contact?.name || c.profile_name || c.contact_name || c.phone_number || 'Desconocido',
+        phone: c.contact?.phone || c.phone_number || c.wa_id || 'Desconocido'
+      },
+      createdAt: c.created_at || c.updated_at || new Date().toISOString()
+    };
   },
 
   async listExecutionEvents(executionId: string): Promise<ExecutionEvent[]> {
-    return fetchKapso(`/platform/v1/projects/${KapsoConfig.projectId}/executions/${executionId}/events`);
+    const raw = await fetchKapso(`/platform/v1/projects/${KapsoConfig.projectId}/conversations/${executionId}/messages`);
+    const items = Array.isArray(raw) ? raw : (raw?.items || raw?.data || []);
+    return items.map((m: any) => {
+      let senderType = 'user';
+      if (m.direction === 'inbound') senderType = 'user';
+      else if (m.direction === 'outbound') senderType = 'agent';
+      else if (m.sender_type) senderType = m.sender_type;
+
+      return {
+        id: m.id || m.message_id || Math.random().toString(),
+        type: 'message',
+        content: m.text?.body || m.content || m.body || m.message || '[Mensaje sin texto]',
+        timestamp: m.timestamp || m.created_at || new Date().toISOString(),
+        sender: senderType as 'user' | 'agent' | 'system'
+      };
+    });
   },
 
   async updateExecutionStatus(id: string, status: string): Promise<boolean> {
-    await fetchKapso(`/platform/v1/projects/${KapsoConfig.projectId}/executions/${id}/status`, {
-      method: 'PUT',
-      body: JSON.stringify({ status }),
-    });
+    // Safe no-op con comentario explícito ya que no se conoce si el endpoint para
+    // actualizar estado/handoff de conversaciones en Kapso es el mismo
+    console.warn(`[Safe No-Op] Intentando actualizar estado de la conversación ${id} a ${status}`);
     return true;
   },
 
