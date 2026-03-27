@@ -16,14 +16,20 @@ Para que la integración con Kapso funcione correctamente en producción (Vercel
 
 **Variables del Servidor (Vercel):**
 - `KAPSO_API_KEY`: Tu clave de API de Kapso para autenticar las peticiones reales. **(Obligatorio)**
-- `KAPSO_API_BASE_URL`: URL base de la API de Kapso (por defecto: `https://api.kapso.com`).
+- `KAPSO_API_BASE_URL`: URL base de la API de Kapso (por defecto: `https://api.kapso.ai`).
+- `VAPID_PUBLIC_KEY`: Clave pública VAPID para notificaciones Web Push.
+- `VAPID_PRIVATE_KEY`: Clave privada VAPID para notificaciones Web Push.
+- `VAPID_SUBJECT`: Correo de contacto para Web Push (ej. `mailto:admin@agapai.com`).
 
 ### Notificaciones Push (MVP)
 
-Se ha integrado el envío de notificaciones push utilizando Expo Notifications.
-- El cliente (app) registra el dispositivo al iniciar y envía su `ExpoPushToken` a `/api/push/register`.
-- En este MVP, los tokens se almacenan en un archivo temporal en Vercel (`/tmp/expo-tokens.json`).
-- Cuando Kapso envía un evento al webhook `/api/kapso/webhook`, se reenvía una notificación a todos los dispositivos registrados a través de `/api/push/notify`.
+Se ha integrado el envío de notificaciones push utilizando Expo Notifications para dispositivos móviles y Web Push para la Progressive Web App (PWA).
+
+**Notificaciones PWA y Web Push (incluyendo iOS Safari):**
+- **Requisito para iOS Safari (iOS 16.4+):** Para que las notificaciones funcionen en dispositivos iOS vía web, el usuario **debe instalar la PWA añadiéndola a la Pantalla de Inicio (Home Screen)**.
+- El cliente web registra su Service Worker al iniciar e interactúa con el usuario desde la pestaña "Perfil" para suscribirse.
+- Las suscripciones de la web se almacenan en un endpoint Vercel temporal (`/api/push/registerWeb`).
+- El endpoint `/api/push/notify` se encarga de enviar las notificaciones simultáneamente a la app móvil a través de Expo y a la web a través de la librería `web-push`.
 
 No se requieren variables de entorno adicionales para las notificaciones en este MVP (el `projectId` de EAS está configurado como `agapaileads-mvp` en `app.json`), pero para producción con una cuenta de Expo real, asegúrate de configurar el `projectId` correcto.
 
@@ -37,6 +43,7 @@ Puedes sobreescribir los IDs predeterminados usando estas variables:
 - `EXPO_PUBLIC_KAPSO_TRIGGER_ID`: ID del disparador.
 - `EXPO_PUBLIC_KAPSO_MODEL_ID`: ID del modelo de IA.
 - `EXPO_PUBLIC_KAPSO_PROJECT_ID`: ID del proyecto en Kapso.
+- `EXPO_PUBLIC_VAPID_PUBLIC_KEY`: Clave pública VAPID accesible para el cliente (para poder suscribirse a Web Push).
 
 Los IDs de proyecto, workflow y modelos están preconfigurados en `constants/KapsoConfig.ts` basados en los requisitos iniciales.
 

@@ -5,14 +5,19 @@ import { useColorScheme } from '@/components/useColorScheme';
 import { Colors } from '@/constants/Colors';
 import { Ionicons } from '@expo/vector-icons';
 import { registerForPushNotificationsAsync } from '../../utils/push';
+import { subscribeToWebPush, checkWebPushStatus } from '../../utils/webPush';
 
 export default function ProfileScreen() {
   const scheme = useColorScheme() ?? 'dark';
   const colors = Colors[scheme];
   const [expoPushToken, setExpoPushToken] = useState<string>('');
+  const [webPushStatus, setWebPushStatus] = useState<string>('cargando');
 
   useEffect(() => {
     registerForPushNotificationsAsync().then(token => setExpoPushToken(token ?? ''));
+    if (process.env.EXPO_OS === 'web') {
+      checkWebPushStatus().then(status => setWebPushStatus(status));
+    }
   }, []);
 
   const handleLogout = () => {
@@ -20,6 +25,17 @@ export default function ProfileScreen() {
       { text: 'Cancelar', style: 'cancel' },
       { text: 'Cerrar', style: 'destructive', onPress: () => console.log('Cerrar sesión') },
     ]);
+  };
+
+  const enableWebPush = async () => {
+    try {
+      await subscribeToWebPush();
+      setWebPushStatus('subscribed');
+      alert('¡Notificaciones Web Push activadas correctamente!');
+    } catch (e: any) {
+      console.error(e);
+      alert('Error al activar Notificaciones Web: ' + e.message);
+    }
   };
 
   return (
@@ -37,10 +53,11 @@ export default function ProfileScreen() {
           <Text style={styles.menuText}>Configuración</Text>
           <Ionicons name="chevron-forward" size={20} color={colors.icon} />
         </TouchableOpacity>
+        
         <TouchableOpacity style={[styles.menuItem, { backgroundColor: colors.cardBackground, borderBottomColor: colors.border }]}>
           <Ionicons name="notifications-outline" size={24} color={colors.text} style={styles.menuIcon} />
           <View style={{ flex: 1, backgroundColor: 'transparent' }}>
-            <Text style={styles.menuText}>Notificaciones</Text>
+            <Text style={styles.menuText}>Notificaciones (App)</Text>
             {expoPushToken ? (
               <Text style={{ fontSize: 12, color: colors.icon, marginTop: 4 }}>
                 Activas ({expoPushToken.substring(0, 15)}...)
@@ -53,6 +70,22 @@ export default function ProfileScreen() {
           </View>
           <Ionicons name="chevron-forward" size={20} color={colors.icon} />
         </TouchableOpacity>
+
+        {process.env.EXPO_OS === 'web' && (
+          <TouchableOpacity 
+            style={[styles.menuItem, { backgroundColor: colors.cardBackground, borderBottomColor: colors.border }]}
+            onPress={webPushStatus !== 'subscribed' ? enableWebPush : undefined}
+          >
+            <Ionicons name="globe-outline" size={24} color={colors.text} style={styles.menuIcon} />
+            <View style={{ flex: 1, backgroundColor: 'transparent' }}>
+              <Text style={styles.menuText}>Notificaciones Web (PWA)</Text>
+              <Text style={{ fontSize: 12, color: colors.icon, marginTop: 4 }}>
+                Estado: {webPushStatus === 'subscribed' ? 'Suscrito' : webPushStatus === 'unsupported' ? 'No Soportado' : webPushStatus === 'denied' ? 'Bloqueadas' : 'No suscrito (Toca para activar)'}
+              </Text>
+            </View>
+            <Ionicons name="chevron-forward" size={20} color={colors.icon} />
+          </TouchableOpacity>
+        )}
       </View>
 
       <View style={styles.section}>
