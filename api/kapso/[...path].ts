@@ -4,7 +4,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   const { path } = req.query;
   const targetPath = Array.isArray(path) ? path.join('/') : path;
   
-  const KAPSO_API_BASE_URL = process.env.KAPSO_API_BASE_URL || 'https://api.kapso.com';
+  const KAPSO_API_BASE_URL = process.env.KAPSO_API_BASE_URL || 'https://api.kapso.ai';
   const KAPSO_API_KEY = process.env.KAPSO_API_KEY;
 
   if (!KAPSO_API_KEY) {

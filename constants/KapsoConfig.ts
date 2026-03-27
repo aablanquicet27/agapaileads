@@ -6,5 +6,5 @@ export const KapsoConfig = {
   triggerId: process.env.EXPO_PUBLIC_KAPSO_TRIGGER_ID || '00c2b35b-9140-448f-b31f-f7e92bf9b653',
   modelId: process.env.EXPO_PUBLIC_KAPSO_MODEL_ID || '51f08c41-71bb-498b-aea1-ed0843336ab2',
   projectId: process.env.EXPO_PUBLIC_KAPSO_PROJECT_ID || '80697017-91d1-41c5-a37f-d502dd9f6d84',
-  baseUrl: process.env.EXPO_PUBLIC_KAPSO_API_URL || 'https://api.kapso.com',
+  baseUrl: process.env.EXPO_PUBLIC_KAPSO_API_URL || 'https://api.kapso.ai',
 };
