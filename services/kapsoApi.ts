@@ -36,64 +36,73 @@ export interface PhoneNumber {
   verified: boolean;
 }
 
-// Fallback/Mock data
-const mockExecutions: Execution[] = [
-  { id: 'exec_1', status: 'active', contact: { id: 'c_1', name: 'María Gómez', phone: '+34600112233' }, createdAt: new Date().toISOString() },
-  { id: 'exec_2', status: 'completed', contact: { id: 'c_2', name: 'Carlos López', phone: '+34600445566' }, createdAt: new Date(Date.now() - 86400000).toISOString() },
-];
+const API_BASE = '/api/kapso';
 
-const mockEvents: ExecutionEvent[] = [
-  { id: 'ev_1', type: 'message', content: '¡Hola! ¿Me pueden ayudar con una reserva?', timestamp: new Date(Date.now() - 3600000).toISOString(), sender: 'user' },
-  { id: 'ev_2', type: 'message', content: '¡Claro, María! Con mucho gusto. ¿Para qué fecha?', timestamp: new Date(Date.now() - 3500000).toISOString(), sender: 'agent' },
-];
+async function fetchKapso(path: string, options: RequestInit = {}) {
+  const url = `${API_BASE}${path}`;
+  const response = await fetch(url, {
+    ...options,
+    headers: {
+      'Content-Type': 'application/json',
+      ...options.headers,
+    },
+  });
+
+  if (!response.ok) {
+    const errorText = await response.text();
+    console.error(`Error en la solicitud a ${url}:`, errorText);
+    throw new Error(`Error HTTP ${response.status}: ${errorText}`);
+  }
+
+  return response.json();
+}
 
 export const KapsoApi = {
   async listExecutions(): Promise<Execution[]> {
-    console.log('Fetching executions with projectId:', KapsoConfig.projectId);
-    // Simulate API delay
-    await new Promise(resolve => setTimeout(resolve, 500));
-    return mockExecutions;
+    return fetchKapso(`/platform/v1/projects/${KapsoConfig.projectId}/executions`);
   },
 
   async getExecution(id: string): Promise<Execution | undefined> {
-    await new Promise(resolve => setTimeout(resolve, 300));
-    return mockExecutions.find(e => e.id === id);
+    return fetchKapso(`/platform/v1/projects/${KapsoConfig.projectId}/executions/${id}`);
   },
 
   async listExecutionEvents(executionId: string): Promise<ExecutionEvent[]> {
-    await new Promise(resolve => setTimeout(resolve, 500));
-    return mockEvents;
+    return fetchKapso(`/platform/v1/projects/${KapsoConfig.projectId}/executions/${executionId}/events`);
   },
 
   async updateExecutionStatus(id: string, status: string): Promise<boolean> {
-    console.log(`Updated execution ${id} to status ${status}`);
+    await fetchKapso(`/platform/v1/projects/${KapsoConfig.projectId}/executions/${id}/status`, {
+      method: 'PUT',
+      body: JSON.stringify({ status }),
+    });
     return true;
   },
 
   async getGraph(): Promise<GraphData> {
-    return { nodes: [], edges: [] };
+    return fetchKapso(`/platform/v1/projects/${KapsoConfig.projectId}/workflows/${KapsoConfig.workflowId}/graph`);
   },
 
   async updateGraph(data: GraphData): Promise<boolean> {
-    console.log('Updated graph', data);
+    await fetchKapso(`/platform/v1/projects/${KapsoConfig.projectId}/workflows/${KapsoConfig.workflowId}/graph`, {
+      method: 'PUT',
+      body: JSON.stringify(data),
+    });
     return true;
   },
 
   async listProviderModels(): Promise<ProviderModel[]> {
-    return [
-      { id: KapsoConfig.modelId, name: 'GPT-4', provider: 'OpenAI' },
-      { id: 'm_2', name: 'Claude 3 Opus', provider: 'Anthropic' }
-    ];
+    return fetchKapso(`/platform/v1/models`);
   },
 
   async updateTrigger(id: string, data: any): Promise<boolean> {
-    console.log(`Updated trigger ${id}`, data);
+    await fetchKapso(`/platform/v1/projects/${KapsoConfig.projectId}/triggers/${id}`, {
+      method: 'PUT',
+      body: JSON.stringify(data),
+    });
     return true;
   },
 
   async listPhoneNumbers(): Promise<PhoneNumber[]> {
-    return [
-      { id: KapsoConfig.phoneNumberId, number: '+1234567890', verified: true }
-    ];
+    return fetchKapso(`/meta/whatsapp/v24.0/phone-numbers`);
   }
 };
