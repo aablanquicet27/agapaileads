@@ -39,18 +39,24 @@ export interface PhoneNumber {
 const API_BASE = '/api/kapso';
 
 async function fetchKapso(path: string, options: RequestInit = {}) {
-  const url = `${API_BASE}${path}`;
-  const response = await fetch(url, {
-    ...options,
+  const payload = {
+    path,
+    method: options.method || 'GET',
+    body: options.body ? JSON.parse(options.body as string) : undefined,
+    headers: options.headers,
+  };
+
+  const response = await fetch(API_BASE, {
+    method: 'POST',
     headers: {
       'Content-Type': 'application/json',
-      ...options.headers,
     },
+    body: JSON.stringify(payload),
   });
 
   if (!response.ok) {
     const errorText = await response.text();
-    console.error(`Error en la solicitud a ${url}:`, errorText);
+    console.error(`Error en la solicitud a ${path}:`, errorText);
     throw new Error(`Error HTTP ${response.status}: ${errorText}`);
   }
 
