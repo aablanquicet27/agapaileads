@@ -1,13 +1,19 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { StyleSheet, ScrollView, TouchableOpacity, Alert } from 'react-native';
 import { Text, View } from '@/components/Themed';
 import { useColorScheme } from '@/components/useColorScheme';
 import { Colors } from '@/constants/Colors';
 import { Ionicons } from '@expo/vector-icons';
+import { registerForPushNotificationsAsync } from '../../utils/push';
 
 export default function ProfileScreen() {
   const scheme = useColorScheme() ?? 'dark';
   const colors = Colors[scheme];
+  const [expoPushToken, setExpoPushToken] = useState<string>('');
+
+  useEffect(() => {
+    registerForPushNotificationsAsync().then(token => setExpoPushToken(token ?? ''));
+  }, []);
 
   const handleLogout = () => {
     Alert.alert('Cerrar sesión', '¿Estás seguro de que deseas cerrar sesión?', [
@@ -33,7 +39,18 @@ export default function ProfileScreen() {
         </TouchableOpacity>
         <TouchableOpacity style={[styles.menuItem, { backgroundColor: colors.cardBackground, borderBottomColor: colors.border }]}>
           <Ionicons name="notifications-outline" size={24} color={colors.text} style={styles.menuIcon} />
-          <Text style={styles.menuText}>Notificaciones</Text>
+          <View style={{ flex: 1, backgroundColor: 'transparent' }}>
+            <Text style={styles.menuText}>Notificaciones</Text>
+            {expoPushToken ? (
+              <Text style={{ fontSize: 12, color: colors.icon, marginTop: 4 }}>
+                Activas ({expoPushToken.substring(0, 15)}...)
+              </Text>
+            ) : (
+              <Text style={{ fontSize: 12, color: colors.icon, marginTop: 4 }}>
+                Desactivadas o solicitando permiso...
+              </Text>
+            )}
+          </View>
           <Ionicons name="chevron-forward" size={20} color={colors.icon} />
         </TouchableOpacity>
       </View>

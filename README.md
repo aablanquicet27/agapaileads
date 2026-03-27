@@ -18,6 +18,15 @@ Para que la integración con Kapso funcione correctamente en producción (Vercel
 - `KAPSO_API_KEY`: Tu clave de API de Kapso para autenticar las peticiones reales. **(Obligatorio)**
 - `KAPSO_API_BASE_URL`: URL base de la API de Kapso (por defecto: `https://api.kapso.com`).
 
+### Notificaciones Push (MVP)
+
+Se ha integrado el envío de notificaciones push utilizando Expo Notifications.
+- El cliente (app) registra el dispositivo al iniciar y envía su `ExpoPushToken` a `/api/push/register`.
+- En este MVP, los tokens se almacenan en un archivo temporal en Vercel (`/tmp/expo-tokens.json`).
+- Cuando Kapso envía un evento al webhook `/api/kapso/webhook`, se reenvía una notificación a todos los dispositivos registrados a través de `/api/push/notify`.
+
+No se requieren variables de entorno adicionales para las notificaciones en este MVP (el `projectId` de EAS está configurado como `agapaileads-mvp` en `app.json`), pero para producción con una cuenta de Expo real, asegúrate de configurar el `projectId` correcto.
+
 **Variables del Cliente (Expo/React Native):**
 Puedes sobreescribir los IDs predeterminados usando estas variables:
 - `EXPO_PUBLIC_KAPSO_API_URL`: URL del proxy o API (por defecto: `/api/kapso` en web).
